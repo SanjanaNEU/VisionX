@@ -1,21 +1,21 @@
 # VisionX
 
-# GlitchCoroner 🪦
+# RedFlag 🪦
 
 > *It doesn't prevent defects. It just shows up after and tells you exactly when the patient flatlined.*
 
-**GlitchCoroner** is an AI quality supervisor that watches your assembly line footage and automatically timestamps every moment something looks wrong — with zero labels, zero training, and absolutely zero sympathy for your scrap rate.
+**RedFlag** is an AI quality supervisor that watches your assembly line footage and automatically timestamps every moment something looks wrong — with zero labels, zero training, and absolutely zero sympathy for your scrap rate.
 
 Feed it a shift's worth of video. It hands you back a timestamped defect report, a plain-English cause-of-death for each anomaly, and a 1–10 severity score. You go from "something went wrong on line 3" to root cause in under a minute.
 
-Your human QA team can keep doing whatever they were doing. GlitchCoroner watched the whole shift. It always does.
+Your human QA team can keep doing whatever they were doing. RedFlag watched the whole shift. It always does.
 
 ---
 
 ## What It Does
 
 ```
-Assembly line footage  →  GlitchCoroner  →  Timestamped defect log
+Assembly line footage  →  RedFlag  →  Timestamped defect log
                                           →  "What went wrong" in plain English
                                           →  Severity score 1–10
                                           →  Root cause hypothesis
@@ -36,7 +36,7 @@ Traditional quality control on assembly lines requires one of three things:
 2. A trained CV model with thousands of labeled defect examples (slow to build, brittle to new failure modes)
 3. Physical sensors wired into the machine (infrastructure project, not a Tuesday afternoon)
 
-GlitchCoroner requires none of these. It requires video and the grim acceptance that things will break.
+RedFlag requires none of these. It requires video and the grim acceptance that things will break.
 
 ---
 
@@ -50,7 +50,7 @@ GlitchCoroner requires none of these. It requires video and the grim acceptance 
 | Visualization | FiftyOne App + Plotly |
 | Language | Python 3.11+ |
 
-**Marengo 3.0** generates 512-dimensional video embeddings. GlitchCoroner builds a baseline distribution from your normal-operation footage, then flags every clip whose embedding drifts too far from it. No labels. No training. Just distance from normal.
+**Marengo 3.0** generates 512-dimensional video embeddings. RedFlag builds a baseline distribution from your normal-operation footage, then flags every clip whose embedding drifts too far from it. No labels. No training. Just distance from normal.
 
 **Pegasus 1.2** watches the flagged clips and tells you what it sees: component misalignment, machine jam, wrong assembly sequence, missing part, operator error. It gives you timestamps for the exact moment things went sideways and a severity score from 1 (eyebrow raise) to 10 (stop the line immediately).
 
