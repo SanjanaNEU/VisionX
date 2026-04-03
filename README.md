@@ -24,7 +24,7 @@ Assembly line footage  →  RedFlag  →  Timestamped defect log
 
 No model training. No labeled defect data. No PhD required.
 
-It uses embedding-based anomaly detection: everything that looks like "normal production" gets compressed into a baseline. Anything that drifts from that baseline gets flagged, described, and scored. The line teaches GlitchCoroner what healthy looks like. GlitchCoroner teaches you what sick looks like.
+It uses embedding-based anomaly detection: everything that looks like "normal production" gets compressed into a baseline. Anything that drifts from that baseline gets flagged, described, and scored. The line teaches RedFlag what healthy looks like. RedFlag teaches you what sick looks like.
 
 ---
 
@@ -89,7 +89,7 @@ session = fo.launch_app(dataset)
 
 Then in the FiftyOne App:
 
-1. Open the **GlitchCoroner** panel
+1. Open the **RedFlag** panel
 2. Click **Run Autopsy** (`analyze_line` operator)
 3. Watch it timestamp every moment something went wrong
 4. Click any flagged clip → see the defect description + severity score + exact timestamp
@@ -198,7 +198,7 @@ glitchcoroner/
 Primary dataset: **Safe & Unsafe Behaviours** (`Voxel51/Safe-and-Unsafe-Behaviours`)
 691 clips from a Turkish manufacturing facility, 1080p, 24 FPS, 8 behavior classes.
 
-GlitchCoroner is not limited to this dataset. Point it at any video footage of a process that has a "normal" state. Assembly lines, quality inspection stations, conveyor belts, packaging lines, CNC machines. If it moves and sometimes breaks, GlitchCoroner will notice.
+RedFlag is not limited to this dataset. Point it at any video footage of a process that has a "normal" state. Assembly lines, quality inspection stations, conveyor belts, packaging lines, CNC machines. If it moves and sometimes breaks, GlitchCoroner will notice.
 
 ---
 
