@@ -1,234 +1,199 @@
-# VisionX
+# Safety Annotation — FiftyOne plugin
 
-# RedFlag 🪦
+A [FiftyOne](https://docs.voxel51.com/) plugin that connects video samples in your dataset to [Twelve Labs](https://www.twelvelabs.io/): create a multimodal index (Marengo 3.0 + Pegasus 1.2), upload clips, preview Marengo embeddings, and run Pegasus for structured **workplace / industrial safety** analysis with a 1–10 danger score returned as JSON.
 
-> *It doesn't prevent defects. It just shows up after and tells you exactly when the patient flatlined.*
-
-**RedFlag** is an AI quality supervisor that watches your assembly line footage and automatically timestamps every moment something looks wrong — with zero labels, zero training, and absolutely zero sympathy for your scrap rate.
-
-Feed it a shift's worth of video. It hands you back a timestamped defect report, a plain-English cause-of-death for each anomaly, and a 1–10 severity score. You go from "something went wrong on line 3" to root cause in under a minute.
-
-Your human QA team can keep doing whatever they were doing. RedFlag watched the whole shift. It always does.
-
----
-
-## What It Does
-
-```
-Assembly line footage  →  RedFlag  →  Timestamped defect log
-                                          →  "What went wrong" in plain English
-                                          →  Severity score 1–10
-                                          →  Root cause hypothesis
-                                          →  Visual anomaly timeline in FiftyOne App
-```
-
-No model training. No labeled defect data. No PhD required.
-
-It uses embedding-based anomaly detection: everything that looks like "normal production" gets compressed into a baseline. Anything that drifts from that baseline gets flagged, described, and scored. The line teaches RedFlag what healthy looks like. RedFlag teaches you what sick looks like.
-
----
-
-## The Problem It Solves
-
-Traditional quality control on assembly lines requires one of three things:
-
-1. A very attentive human watching hours of footage (expensive, fallible, hates their job)
-2. A trained CV model with thousands of labeled defect examples (slow to build, brittle to new failure modes)
-3. Physical sensors wired into the machine (infrastructure project, not a Tuesday afternoon)
-
-RedFlag requires none of these. It requires video and the grim acceptance that things will break.
-
----
-
-## Tech Stack
-
-| Layer | Tool |
-|---|---|
-| Video dataset management | [FiftyOne](https://docs.voxel51.com/) |
-| Anomaly detection (embeddings) | [Twelve Labs Marengo 3.0](https://www.twelvelabs.io/blog/marengo-3-0) |
-| Defect description + scoring | [Twelve Labs Pegasus 1.2](https://www.twelvelabs.io/blog/introducing-pegasus-1-2) |
-| Visualization | FiftyOne App + Plotly |
-| Language | Python 3.11+ |
-
-**Marengo 3.0** generates 512-dimensional video embeddings. RedFlag builds a baseline distribution from your normal-operation footage, then flags every clip whose embedding drifts too far from it. No labels. No training. Just distance from normal.
-
-**Pegasus 1.2** watches the flagged clips and tells you what it sees: component misalignment, machine jam, wrong assembly sequence, missing part, operator error. It gives you timestamps for the exact moment things went sideways and a severity score from 1 (eyebrow raise) to 10 (stop the line immediately).
-
----
-
-## Installation
-
-```bash
-# Prerequisites: Python 3.11+, FFmpeg
-pip install fiftyone twelvelabs numpy scikit-learn plotly python-dotenv
-
-# Install GlitchCoroner as a FiftyOne plugin
-fiftyone plugins download https://github.com/YOUR_USERNAME/glitchcoroner
-
-# Set your Twelve Labs API key
-export TWELVELABS_API_KEY="your_key_here"
-# (or copy .env.example to .env and fill it in)
-```
-
-Get a free Twelve Labs API key at [playground.twelvelabs.io](https://playground.twelvelabs.io) — 600 minutes of indexing included.
-
----
-
-## Quickstart
-
-```python
-import fiftyone as fo
-from fiftyone.utils.huggingface import load_from_hub
-
-# Load the Safe & Unsafe Behaviours dataset (or your own footage)
-dataset = load_from_hub("Voxel51/Safe-and-Unsafe-Behaviours")
-
-# Launch the FiftyOne App
-session = fo.launch_app(dataset)
-```
-
-Then in the FiftyOne App:
-
-1. Open the **RedFlag** panel
-2. Click **Run Autopsy** (`analyze_line` operator)
-3. Watch it timestamp every moment something went wrong
-4. Click any flagged clip → see the defect description + severity score + exact timestamp
-
----
-
-## FiftyOne Plugin Operators
-
-| Operator | What It Does |
-|---|---|
-| `analyze_line` | Embeds all footage, scores anomalies, calls Pegasus on flagged clips |
-| `set_normal_baseline` | Define what "healthy" looks like using selected clips |
-| `filter_by_severity` | Show only clips above a minimum severity threshold |
-
----
-
-## Output Fields Written Per Clip
-
-| Field | Type | Example |
-|---|---|---|
-| `gc_anomaly_score` | float | `0.847` |
-| `gc_is_anomaly` | bool | `True` |
-| `gc_severity_score` | int 1–10 | `8` |
-| `gc_defect_description` | str | `"Component installed at wrong angle at 00:14"` |
-| `gc_defect_type` | str | `"misalignment"` |
-| `gc_root_cause_hypothesis` | str | `"Feed mechanism hesitation before insertion"` |
-| `gc_peak_timestamp` | str | `"00:14"` |
-| `gc_confidence` | str | `"high"` |
-
----
-
-## Dashboard Panel
-
-The GlitchCoroner panel in the FiftyOne App shows:
-
-- **Severity Timeline** — a scrollable plot of severity scores across the shift
-- **Defect Type Breakdown** — what categories of problems are most common
-- **Top Offenders** — the 10 worst clips ranked by severity
-- **Embedding Scatter** — 2D projection of all clips; anomalies cluster visibly away from the normal blob
-- **Per-clip Autopsy Report** — rendered inline next to the video player
-
----
-
-## How Anomaly Detection Works
-
-```
-1. Index all clips with Marengo 3.0  →  512-d embedding per clip
-2. Build normal baseline             →  centroid of "healthy" clip embeddings
-3. Score every clip                  →  cosine distance from baseline centroid
-4. Compute z-scores                  →  standardize across the shift
-5. Flag outliers                     →  clips beyond threshold (default: 2.0σ)
-6. Call Pegasus on flagged clips     →  get description, type, score, timestamp
-7. Write everything to FiftyOne      →  browse in App, export for reports
-```
-
-Threshold is configurable. Lower it to catch subtle drift. Raise it if your line is noisy and you only want to see disasters.
-
----
-
-## Adding Your Own Footage
-
-```bash
-# Add scraped or recorded footage
-python scripts/ingest_footage.py \
-  --input /path/to/your/shift_footage/ \
-  --source "line_3_morning_shift"
-
-# Or use the built-in scraper for training/test data
-python scripts/scrape_videos.py \
-  --keywords "assembly line defect" "manufacturing quality failure" \
-  --max-clips 50
-```
-
-GlitchCoroner will:
-- Validate codec, duration, resolution via FFmpeg
-- Merge clips into the FiftyOne dataset
-- Tag them with their source for traceability
-
----
-
-## Project Structure
-
-```
-glitchcoroner/
-├── fiftyone.yml           # Plugin manifest
-├── __init__.py            # Operators + panel
-├── glitchcoroner/
-│   ├── anomaly_detector.py   # Marengo embedding + scoring
-│   ├── defect_analyzer.py    # Pegasus defect analysis + parsing
-│   ├── dataset_loader.py     # FiftyOne loading utilities
-│   └── constants.py          # Prompts, field names, thresholds
-├── scripts/
-│   ├── ingest_footage.py     # Import your own video
-│   ├── scrape_videos.py      # yt-dlp scraper
-│   └── run_eda.py            # EDA stats
-└── docs/
-    ├── PRD.md
-    ├── TRD.md
-    └── WORKFLOW.md
-```
-
----
-
-## Dataset
-
-Primary dataset: **Safe & Unsafe Behaviours** (`Voxel51/Safe-and-Unsafe-Behaviours`)
-691 clips from a Turkish manufacturing facility, 1080p, 24 FPS, 8 behavior classes.
-
-RedFlag is not limited to this dataset. Point it at any video footage of a process that has a "normal" state. Assembly lines, quality inspection stations, conveyor belts, packaging lines, CNC machines. If it moves and sometimes breaks, GlitchCoroner will notice.
+The plugin is defined by `fiftyone.yml` and registered from `__init__.py`.
 
 ---
 
 ## Requirements
 
-- Python 3.11+
-- FFmpeg (for video validation)
-- Twelve Labs API key ([free tier: 600 minutes](https://playground.twelvelabs.io))
-- FiftyOne ≥ 0.24
-- Enough disk space for your footage
+- **FiftyOne** ≥ 0.24 (see `fiftyone.yml`)
+- **Python** 3.11+ recommended (match your FiftyOne environment)
+- **`twelvelabs`** Python SDK (listed in the repo `requirements.txt`)
+- **Twelve Labs API key** with access to indexing and analyze APIs
+- Video samples must have a valid **`filepath`** on disk (local files the SDK can open)
 
 ---
 
-## Limitations
+## Install the plugin
 
-- **Batch only (v0.1):** GlitchCoroner processes recorded footage. It does not stream live video yet.
-- **Pegasus can hallucinate:** Defect descriptions are AI-generated. Treat them as hypotheses, not verdicts. Severity scores are clamped 1–10 but not guaranteed calibrated.
-- **Baseline quality matters:** If your "normal" clips include defects, the baseline will be wrong and GlitchCoroner will miss things. Garbage in, confident garbage out.
-- **Not a replacement for engineers:** GlitchCoroner tells you *when* and *what*. It does not fix your tooling, retrain your operators, or file your incident reports. That's still your problem.
+FiftyOne loads plugins from **`plugins_dir`** (default under your FiftyOne dataset directory, e.g. `~/fiftyone/__plugins__`). You can print the exact path:
+
+```bash
+python -c "import fiftyone as fo; print(fo.config.plugins_dir)"
+```
+
+### Local development (symlink)
+
+Point a name under `plugins_dir` at this folder (manifest name is **`safety-annotation`**):
+
+```bash
+REPO="/absolute/path/to/VisionX/safety-annotatation"
+DEST="$(python -c "import fiftyone as fo; print(fo.config.plugins_dir)")/safety-annotation"
+ln -sfn "$REPO" "$DEST"
+```
+
+Use `safety-annotatation` in the path if that is how the directory is named in your clone.
+
+### Download from GitHub
+
+When the repo is online, download the plugin subtree that contains `fiftyone.yml`:
+
+```bash
+fiftyone plugins download "https://github.com/<user>/VisionX/tree/<branch>/safety-annotatation" \
+  --plugin-names safety-annotation
+```
+
+Restart the FiftyOne App after adding, moving, or upgrading a plugin.
+
+---
+
+## Configure the API key
+
+The plugin reads **`TWELVELABS_API_KEY`**. Supported sources:
+
+1. **FiftyOne App** — Settings → Plugin secrets, add secret name `TWELVELABS_API_KEY`.
+2. **Environment** — `export TWELVELABS_API_KEY=...`
+3. **Alternate env name** — `TWELVE_LABS_API_KEY` is also accepted (see `twelve_labs_helpers.py`).
+
+The key is declared under `secrets` in `fiftyone.yml` so the App can prompt for it.
+
+---
+
+## Quick workflow
+
+1. Load a FiftyOne dataset whose samples are **video** with `filepath` set.
+2. Optional but recommended: ensure samples have **`ground_truth.label`** — Pegasus will receive it as context when analyzing safety.
+3. In the App, run the operator **Create Twelve Labs index** and give the index a name. This creates a Twelve Labs index with **marengo3.0** and **pegasus1.2** (visual + audio) and stores the id in **`dataset.info["tl_index_id"]`**.
+4. Open the panel **Safety + Twelve Labs** (grid surface).
+5. Select samples in the App grid, choose an action from the dropdown, and click **Run**.
+
+---
+
+## Operator: `create_twelvelabs_index`
+
+| | |
+| --- | --- |
+| **Label** | Create Twelve Labs index |
+| **Purpose** | Creates a new Twelve Labs index and saves its id on the dataset. |
+| **Input** | Index name (required when the API key is set). |
+| **Side effects** | Sets `dataset.info["tl_index_id"]` and saves the dataset. |
+
+If the API key is missing, the form shows a warning with setup instructions; execution is a no-op with a notification.
+
+Delegated execution is allowed (`allow_delegated_execution=True`).
+
+---
+
+## Panel: `safety_annotation_panel`
+
+| | |
+| --- | --- |
+| **Label** | Safety + Twelve Labs |
+| **Surface** | Grid |
+
+### Layout
+
+The panel shows:
+
+- **Status notice** — whether the Twelve Labs API key is detected and which index id is active.
+- **Action dropdown** — choose what to do when **Run** is clicked.
+- **Status** (read-only text) — last operation result or progress message.
+- **Pegasus output (JSON)** (read-only multiline textbox) — full JSON output from the most recent Pegasus run.
+- **Run button** — executes the selected action.
+
+### Actions
+
+| Action | Scope | What it does |
+| --- | --- | --- |
+| **Upload all selected samples** | All selected in App grid | Uploads each selected sample's video file to the dataset's `tl_index_id`, waits for indexing, and saves **`tl_video_id`** on each sample. Skips samples with no readable `filepath`. Prints a per-item progress count in the Status field. |
+| **Upload current / first selected sample** | Single sample | Uploads the currently open (modal) sample, or the first selected sample if no modal is open. Saves **`tl_video_id`** on success. |
+| **View embeddings (preview)** | Single sample | Retrieves Marengo visual embedding metadata for the sample's `tl_video_id` and stores a short summary string (`segments`, `dim`, first 8 floats) in **`tl_embedding_preview`**. |
+| **Pegasus safety analysis – current sample (JSON)** | Single sample | Runs Pegasus on the current/first selected sample. Returns structured JSON with `reasoning` (string) and `danger_score` (integer 1–10). Saves **`tl_safety_reasoning`** and **`tl_danger_score`** on the sample. Full JSON is displayed in the **Pegasus output** textbox. |
+| **Pegasus safety analysis – all selected samples (JSON)** | All selected in App grid | Runs Pegasus on every selected sample that has a `tl_video_id`. Results for all samples are collected into a JSON array and displayed in the **Pegasus output** textbox. Each entry includes `sample_id` plus the Pegasus fields, or an `error` key if that sample failed. Saves `tl_safety_reasoning` and `tl_danger_score` on each successfully analyzed sample. |
+
+**Single-sample resolution order:** modal current sample → first id in `ctx.selected` → first sample in current view.
+
+### Pegasus output format
+
+Single-sample run:
+
+```json
+{
+  "sample_id": "abc123",
+  "reasoning": "The worker is not wearing PPE in the early portion of the clip...",
+  "danger_score": 8
+}
+```
+
+All-selected run:
+
+```json
+[
+  {
+    "sample_id": "abc123",
+    "reasoning": "Forklift operating without a spotter...",
+    "danger_score": 7
+  },
+  {
+    "sample_id": "def456",
+    "error": "no tl_video_id – upload first"
+  }
+]
+```
+
+---
+
+## Fields written by the plugin
+
+| Location | Field | Meaning |
+| --- | --- | --- |
+| Dataset | `info["tl_index_id"]` | Twelve Labs index id after running the create-index operator. |
+| Sample | `tl_video_id` | Twelve Labs video id after a successful upload. |
+| Sample | `tl_embedding_preview` | Text summary from Marengo embedding retrieval. |
+| Sample | `tl_safety_reasoning` | Pegasus reasoning text. |
+| Sample | `tl_danger_score` | Pegasus danger score (1–10) when returned as an integer. |
+
+---
+
+## Implementation notes
+
+- **Index models** — `create_index()` in `twelve_labs_helpers.py` uses **marengo3.0** and **pegasus1.2** with options `["visual", "audio"]`.
+- **Upload** — Uses the Twelve Labs tasks API, waits until the task completes (`tasks.wait_for_done`), then reads `video_id` from the completed task.
+- **Analyze** — `analyze_safety()` uses `ResponseFormat` with a JSON schema (`reasoning`, `danger_score`); malformed JSON falls back to storing raw text.
+- **Ground truth context** — When a sample has `ground_truth.label`, it is prepended to the Pegasus prompt so the model knows the dataset label for this clip.
+
+---
+
+## Troubleshooting
+
+- **"Twelve Labs API key missing"** — Set `TWELVELABS_API_KEY` in App plugin secrets or the environment; restart the App if needed.
+- **"No index id"** — Run **Create Twelve Labs index** on the loaded dataset first.
+- **"No tl_video_id"** — Upload the sample (or bulk-upload all selected) before running embeddings or Pegasus.
+- **Upload skipped** — Common causes: file missing on disk, or `tl_video_id` already set on that sample.
+- **Pegasus output shows `"error"` entries** — Those samples were either not loaded or are missing `tl_video_id`; upload them first.
+
+---
+
+## Manifest and package layout
+
+| File | Role |
+| --- | --- |
+| `fiftyone.yml` | Plugin name `safety-annotation`, version, FiftyOne version, operators/panels list, secrets. |
+| `__init__.py` | `register(pctx)` — registers `CreateTwelveLabsIndex` and `SafetyAnnotationPanel`. |
+| `twelve_labs_helpers.py` | API key resolution, client, index create, upload, embedding preview, Pegasus safety analyze. |
+| `operators/create_twelvelabs_index.py` | Create-index operator. |
+| `panels/safety_annotation_panel.py` | Panel UI and action handlers. |
 
 ---
 
 ## License
 
-Apache 2.0. Use it, fork it, deploy it, blame it.
+See `fiftyone.yml` (Apache 2.0 as declared in the manifest).
 
 ---
 
-## Built At
+## Author
 
-**Video Understanding AI Hackathon @ Northeastern University**
-April 3, 2026 · Powered by [FiftyOne](https://voxel51.com) × [Twelve Labs](https://twelvelabs.io)
-
+Sathwik Matcha (see `fiftyone.yml`).
