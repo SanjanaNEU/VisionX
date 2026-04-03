@@ -232,4 +232,3 @@ Apache 2.0. Use it, fork it, deploy it, blame it.
 **Video Understanding AI Hackathon @ Northeastern University**
 April 3, 2026 · Powered by [FiftyOne](https://voxel51.com) × [Twelve Labs](https://twelvelabs.io)
 
-*"The line never lies. GlitchCoroner just makes it talk."*
