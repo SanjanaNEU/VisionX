@@ -73,6 +73,18 @@ def create_index(client: TwelveLabs, index_name: str) -> str:
     return index_id
 
 
+def verify_index_exists(client: TwelveLabs, index_id: str) -> str:
+    """
+    Confirm the index id is reachable with the current API key; return normalized id.
+    Raises if the index is missing or the request fails.
+    """
+    s = (index_id or "").strip()
+    if not s:
+        raise ValueError("Index id is empty.")
+    client.indexes.retrieve(s)
+    return s
+
+
 def upload_video_file(client: TwelveLabs, index_id: str, filepath: str) -> str:
     """Upload a local file to the index, wait until ready; return Twelve Labs video_id."""
     with open(filepath, "rb") as f:
