@@ -1,0 +1,27 @@
+# FiftyOne plugin manifest — fill in url/author and add operator & panel names
+# when you register them in Python. Names must match @register_operator / @register_panel.
+
+name: safety-annotation
+type: plugin
+author: Sathwik Matcha
+version: 0.1.0
+url: https://github.com/YOUR_USERNAME/VisionX
+license: Apache 2.0
+description: >
+  Template plugin for safety-oriented video annotation in FiftyOne.
+  Replace this text with a one-line summary of what the plugin does.
+
+fiftyone:
+  version: ">=0.24"
+
+# List the Python-registered operator names (see fiftyone.operators @register_operator)
+operators:
+  - create_twelvelabs_index
+
+# List the panel component names (see fiftyone.panels @register_panel)
+panels: 
+  - safety_annotation_panel
+
+# Environment variable names the plugin may read (documented for operators; optional)
+secrets:
+  - TWELVELABS_API_KEY

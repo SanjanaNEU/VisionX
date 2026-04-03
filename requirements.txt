@@ -1,0 +1,7 @@
+fiftyone
+twelvelabs
+numpy 
+scikit-learn 
+plotly 
+python-dotenv
+huggingface_hub
