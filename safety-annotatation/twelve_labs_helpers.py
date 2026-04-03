@@ -8,6 +8,26 @@ from typing import Any, Dict, Optional
 
 from twelvelabs import TwelveLabs, IndexesCreateRequestModelsItem, ResponseFormat
 
+TWELVELABS_SETUP_MESSAGE = (
+    "Twelve Labs API key not found. Add TWELVELABS_API_KEY using one of:\n"
+    "• FiftyOne App: Settings → Plugin secrets (key name: TWELVELABS_API_KEY)\n"
+    "• Environment: export TWELVELABS_API_KEY=... (or TWELVE_LABS_API_KEY)\n"
+    "• .env loaded before starting the App / notebook\n"
+    "This plugin declares the secret in fiftyone.yml."
+)
+
+
+def is_twelvelabs_configured(ctx) -> bool:
+    """True if a Twelve Labs API key is available (secrets or env)."""
+    return bool(get_api_key(ctx))
+
+
+def twelvelabs_config_error_message(ctx) -> Optional[str]:
+    """None if configured; otherwise a user-facing explanation."""
+    if is_twelvelabs_configured(ctx):
+        return None
+    return TWELVELABS_SETUP_MESSAGE
+
 
 def get_api_key(ctx) -> Optional[str]:
     """Resolve API key from FiftyOne plugin secrets or environment."""
@@ -51,6 +71,18 @@ def create_index(client: TwelveLabs, index_name: str) -> str:
     if not index_id:
         raise RuntimeError("Create index response missing id.")
     return index_id
+
+
+def verify_index_exists(client: TwelveLabs, index_id: str) -> str:
+    """
+    Confirm the index id is reachable with the current API key; return normalized id.
+    Raises if the index is missing or the request fails.
+    """
+    s = (index_id or "").strip()
+    if not s:
+        raise ValueError("Index id is empty.")
+    client.indexes.retrieve(s)
+    return s
 
 
 def upload_video_file(client: TwelveLabs, index_id: str, filepath: str) -> str:
