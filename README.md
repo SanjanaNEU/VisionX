@@ -1,4 +1,4 @@
-# Safety Annotation — FiftyOne plugin
+# RedFlag — FiftyOne plugin
 
 A [FiftyOne](https://docs.voxel51.com/) plugin that connects video samples in your dataset to [Twelve Labs](https://www.twelvelabs.io/): create a multimodal index (Marengo 3.0 + Pegasus 1.2), upload clips, preview Marengo embeddings, and run Pegasus for structured **workplace / industrial safety** analysis with a 1–10 danger score returned as JSON.
 
@@ -194,6 +194,4 @@ See `fiftyone.yml` (Apache 2.0 as declared in the manifest).
 
 ---
 
-## Author
 
-Sathwik Matcha (see `fiftyone.yml`).
