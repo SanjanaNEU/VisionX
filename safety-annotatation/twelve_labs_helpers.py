@@ -8,6 +8,26 @@ from typing import Any, Dict, Optional
 
 from twelvelabs import TwelveLabs, IndexesCreateRequestModelsItem, ResponseFormat
 
+TWELVELABS_SETUP_MESSAGE = (
+    "Twelve Labs API key not found. Add TWELVELABS_API_KEY using one of:\n"
+    "• FiftyOne App: Settings → Plugin secrets (key name: TWELVELABS_API_KEY)\n"
+    "• Environment: export TWELVELABS_API_KEY=... (or TWELVE_LABS_API_KEY)\n"
+    "• .env loaded before starting the App / notebook\n"
+    "This plugin declares the secret in fiftyone.yml."
+)
+
+
+def is_twelvelabs_configured(ctx) -> bool:
+    """True if a Twelve Labs API key is available (secrets or env)."""
+    return bool(get_api_key(ctx))
+
+
+def twelvelabs_config_error_message(ctx) -> Optional[str]:
+    """None if configured; otherwise a user-facing explanation."""
+    if is_twelvelabs_configured(ctx):
+        return None
+    return TWELVELABS_SETUP_MESSAGE
+
 
 def get_api_key(ctx) -> Optional[str]:
     """Resolve API key from FiftyOne plugin secrets or environment."""
